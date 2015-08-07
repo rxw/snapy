@@ -1,12 +1,10 @@
-pysnap
-======
+Pysnap Improved
+===============
 
-[![Build Status](https://travis-ci.org/martinp/pysnap.png)](https://travis-ci.org/martinp/pysnap)
+A Python library for the Snapchat API.
 
-A Python library for the Snapchat API
-
-The implementation is partially based on php-snapchat by dstelljes and the
-[full disclosure by GibSec](http://gibsonsec.org/snapchat/fulldisclosure/).
+An fork of pysnap by [martinp](https://github.com/martinp/pysnap) updated to
+use the new Snapchat API. 
 
 Installation
 ------------

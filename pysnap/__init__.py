@@ -2,10 +2,14 @@
 
 import json
 import os.path
+import hmac
 from time import time
+from hashlib import sha256
 
 from pysnap.utils import (encrypt, decrypt, decrypt_story,
-                          make_media_id, request)
+                          make_media_id, request, get_auth_token, 
+                          make_request_token, get_attestation, 
+                          timestamp, STATIC_TOKEN)
 
 MEDIA_IMAGE = 0
 MEDIA_VIDEO = 1
@@ -60,7 +64,6 @@ def _map_keys(snap):
         u'opened': snap.get('ts', None)
     }
 
-
 class Snapchat(object):
     """Construct a :class:`Snapchat` object used for communicating
     with the Snapchat API.
@@ -76,17 +79,23 @@ class Snapchat(object):
     def __init__(self):
         self.username = None
         self.auth_token = None
+        self.gmail = None
+        self.gpasswd = None
 
-    def _request(self, endpoint, data=None, files=None,
+    def _request(self, endpoint, data=None, params=None, files=None,
                  raise_for_status=True, req_type='post'):
-        return request(endpoint, self.auth_token, data, files,
+        return request(endpoint, self.auth_token, data, params, files,
                        raise_for_status, req_type)
 
+    def _get_device_token(self):
+        r = self._request('device_id')
+        return r.json()
+        
     def _unset_auth(self):
         self.username = None
         self.auth_token = None
 
-    def login(self, username, password):
+    def login(self, username, password, gmail, gpasswd):
         """Login to Snapchat account
         Returns a dict containing user information on successful login, the
         data returned is similar to get_updates.
@@ -94,11 +103,34 @@ class Snapchat(object):
         :param username Snapchat username
         :param password Snapchat password
         """
+        self.gmail = gmail
+        self.gpasswd = gpasswd
+
+        now = str(timestamp())
+        req_token = make_request_token(STATIC_TOKEN, now)
+        gauthtoken = get_auth_token(gmail, gpasswd)
+        string = username + "|" + password + "|" + now + "|" + req_token
+        dtoken = self._get_device_token()
         self._unset_auth()
+        attestation = get_attestation(username, password, now)
         r = self._request('login', {
             'username': username,
-            'password': password
-        })
+            'password': password,
+            'height': 1280,
+            'width': 720,
+            'max_video_height': 640,
+            'max_video_width': 480,
+            'dsig': hmac.new(str(dtoken['dtoken1v']),string,sha256).hexdigest()[:20],
+            'dtoken1i': dtoken['dtoken1i'],
+            'ptoken': "ie",
+            'attestation': attestation,
+            'sflag': 1,
+            'application_id': 'com.snapchat.android',
+            'req_token': req_token
+        }, {
+            'now': now, 
+            'gauth': gauthtoken
+            })
         result = r.json()
 
         if 'updates_response' in result:
@@ -128,14 +160,23 @@ class Snapchat(object):
         :param update_timestamp: Optional timestamp (epoch in seconds) to limit
                                  updates
         """
-        r = self._request('updates', {
+        gauth = get_auth_token(self.gmail, self.gpasswd)
+        now = str(timestamp())
+        r = self._request('all_updates', {
+            'timestamp': now,
             'username': self.username,
-            'update_timestamp': update_timestamp
-        })
+            'height': 1280,
+            'width': 720,
+            'max_video_height': 640,
+            'max_video_width': 480
+        }, {
+            'now': now,
+            'gauth': gauth
+            })
         result = r.json()
         if 'auth_token' in result:
             self.auth_token = result['auth_token']
-        return result
+        return result['updates_response']
 
     def get_snaps(self, update_timestamp=0):
         """Get snaps
@@ -146,8 +187,9 @@ class Snapchat(object):
         """
         updates = self.get_updates(update_timestamp)
         # Filter out snaps containing c_id as these are sent snaps
-        return [_map_keys(snap) for snap in updates['snaps']
-                if 'c_id' not in snap]
+        #return [_map_keys(snap) for snap in updates['snaps']
+                #if 'c_id' not in snap]
+        print updates
 
     def get_friend_stories(self, update_timestamp=0):
         """Get stories
