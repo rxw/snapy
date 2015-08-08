@@ -3,7 +3,7 @@ Pysnap Improved
 
 A Python library for the Snapchat API.
 
-An fork of pysnap by [martinp](https://github.com/martinp/pysnap) updated to
+A fork of pysnap by [martinp](https://github.com/martinp/pysnap) updated to
 use the new Snapchat API. 
 
 Installation

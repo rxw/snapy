@@ -177,13 +177,11 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
         print headers
     elif endpoint == 'device_id' :
         URL = 'https://feelinsonice-hrd.appspot.com/loq/'
-    elif endpoint == 'all_updates':
+    else:
         URL = 'https://feelinsonice-hrd.appspot.com/loq/'
         headers.update({
             'X-Snapchat-Client-Auth-Token': "Bearer " + gauth
             })
-    else:
-        URL = 'https://feelinsonice-hrd.appspot.com/bq/'
 
     if req_type == 'post':
         if endpoint == 'login' or endpoint == 'device_id':

@@ -4,7 +4,7 @@ import json
 import os.path
 import hmac
 from time import time
-from hashlib import sha256
+from hashlib import sha256, md5
 
 from pysnap.utils import (encrypt, decrypt, decrypt_story,
                           make_media_id, request, get_auth_token, 
@@ -81,6 +81,7 @@ class Snapchat(object):
         self.auth_token = None
         self.gmail = None
         self.gpasswd = None
+        self.gauth = None
 
     def _request(self, endpoint, data=None, params=None, files=None,
                  raise_for_status=True, req_type='post'):
@@ -160,7 +161,7 @@ class Snapchat(object):
         :param update_timestamp: Optional timestamp (epoch in seconds) to limit
                                  updates
         """
-        gauth = get_auth_token(self.gmail, self.gpasswd)
+        self.gauth = get_auth_token(self.gmail, self.gpasswd)
         now = str(timestamp())
         r = self._request('all_updates', {
             'timestamp': now,
@@ -171,21 +172,53 @@ class Snapchat(object):
             'max_video_width': 480
         }, {
             'now': now,
-            'gauth': gauth
+            'gauth': self.gauth
             })
         result = r.json()
         if 'auth_token' in result:
             self.auth_token = result['auth_token']
-        return result['updates_response']
+        return result
+    
+    def get_conversations(self):
+        offset = None
+        updates = self.get_updates()
+        try:
+            last = updates['conversations_response'][-2]
+        except KeyError:
+            print "No conversations except TeamSnapchat"
+        
+        offset = last['iter_token']
+        
+        convos = updates['conversations_response']
+        while len(offset) > 0:
+            now = str(timestamp())
+            result = self._request('conversations', {
+                'username': self.username,
+                'timestamp': now,
+                'checksum': md5(self.username).hexdigest(),
+                'offset': offset,
+                'features_map': '{}'
+                }, {
+                'now': now,
+                'gauth': self.gauth
+                })
+            print result.json()
+            convos += result.json()['conversations_response']
+            last = result.json()['conversations_response'][-1]
+            offset = last['iter_token'] if 'iter_token' in last else ""
 
-    def get_snaps(self, update_timestamp=0):
+        return convos
+
+    def get_snaps(self):
         """Get snaps
         Returns a dict containing metadata for snaps
 
         :param update_timestamp: Optional timestamp (epoch in seconds) to limit
                                  updates
         """
-        updates = self.get_updates(update_timestamp)
+        updates = self.get_updates()
+
+        conversations = self.get_conversations()
         # Filter out snaps containing c_id as these are sent snaps
         #return [_map_keys(snap) for snap in updates['snaps']
                 #if 'c_id' not in snap]
@@ -198,11 +231,7 @@ class Snapchat(object):
         :param update_timestamp: Optional timestamp (epoch in seconds) to limit
                                  updates
         """
-        r = self._request("all_updates", {
-            'username': self.username,
-            'update_timestamp': update_timestamp
-        })
-        result = r.json()
+        result = self.get_updates()
         if 'auth_token' in result:
             self.auth_token = result['auth_token']
         stories = []
