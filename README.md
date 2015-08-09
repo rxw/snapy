@@ -42,10 +42,13 @@ downloading stories and `get_snaps.py` for downloading snaps.
     Basic Snapchat client
 
     Usage:
-      get_snaps.py [-q] -u <username> [-p <password>] <path>
+      get_snaps.py [-q] -u <username> [-p <password>]  --gmail=<gmail>
+                    --gpasswd=<gpasswd> <path>
 
     Options:
       -h --help                 Show usage
       -q --quiet                Suppress output
       -u --username=<username>  Username
       -p --password=<password>  Password (optional, will prompt if omitted)
+         --gmail=<gmail>        Gmail
+         --gpasswd=<gpasswd>    Gmail password
