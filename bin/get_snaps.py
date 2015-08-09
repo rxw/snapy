@@ -10,7 +10,8 @@ Options:
   -q --quiet                Suppress output
   -u --username=<username>  Username
   -p --password=<password>  Password (optional, will prompt if omitted)
-
+     --gmail=<gmail>        Gmail
+     --gpasswd=<gpasswd>    Gmail password
 """
 from __future__ import print_function
 
@@ -55,6 +56,12 @@ def main():
         password = getpass('Password:')
     else:
         password = arguments['--password']
+    
+    gmail = arguments['--gmail']
+    if arguments['--gpasswd'] is None:
+        password = getpass('Gmail password:')
+    else:
+        password = arguments['--gpasswd']
     path = arguments['<path>']
 
     if not os.path.isdir(path):
@@ -62,7 +69,7 @@ def main():
         sys.exit(1)
 
     s = Snapchat()
-    if not s.login(username, password)['updates_response'].get('logged'):
+    if not s.login(username, password, gmail, gpasswd)['updates_response'].get('logged'):
         print('Invalid username or password')
         sys.exit(1)
 
