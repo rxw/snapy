@@ -3,8 +3,6 @@ Pysnap Improved
 
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/sindresorhus/awesome)
 
-A Python library for the Snapchat API.
-
 A fork of pysnap by [martinp](https://github.com/martinp/pysnap) updated to
 use the new Snapchat API. 
 
@@ -28,7 +26,7 @@ from pprint import pprint
 from pysnap import Snapchat
 
 s = Snapchat()
-s.login('username', 'password')
+s.login('username', 'password', 'gmail', 'gpasswd')
 snaps = s.get_snaps()
 
 pprint(snaps)
