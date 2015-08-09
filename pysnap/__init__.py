@@ -23,15 +23,15 @@ PRIVACY_FRIENDS = 1
 
 
 def is_video(data):
-    return True if data[0:2] == b'\x00\x00' else False
+    return len(data) > 1 and data[0:2] == b'\x00\x00'
 
 
 def is_image(data):
-    return True if data[0:2] == b'\xFF\xD8' else False
+    return len(data) > 1 and data[0:2] == b'\xFF\xD8'
 
 
 def is_zip(data):
-    return True if data[0:2] == b'PK' else False
+    return len(data) > 1 and data[0:2] == b'PK'
 
 
 def get_file_extension(media_type):
@@ -89,7 +89,7 @@ class Snapchat(object):
                        raise_for_status, req_type)
 
     def _get_device_token(self):
-        r = self._request('/loq/device_id',params={'gauth': self.gauth})
+        r = self._request('device_id')
         return r.json()
         
     def _unset_auth(self):
@@ -109,12 +109,12 @@ class Snapchat(object):
 
         now = str(timestamp())
         req_token = make_request_token(STATIC_TOKEN, now)
-        self.gauth = get_auth_token(gmail, gpasswd)
+        gauthtoken = get_auth_token(gmail, gpasswd)
         string = username + "|" + password + "|" + now + "|" + req_token
         dtoken = self._get_device_token()
         self._unset_auth()
         attestation = get_attestation(username, password, now)
-        r = self._request('/loq/login', {
+        r = self._request('login', {
             'username': username,
             'password': password,
             'height': 1280,
@@ -130,7 +130,7 @@ class Snapchat(object):
             'req_token': req_token
         }, {
             'now': now, 
-            'gauth': self.gauth
+            'gauth': gauthtoken
             })
         result = r.json()
 
@@ -161,8 +161,9 @@ class Snapchat(object):
         :param update_timestamp: Optional timestamp (epoch in seconds) to limit
                                  updates
         """
+        self.gauth = get_auth_token(self.gmail, self.gpasswd)
         now = str(timestamp())
-        r = self._request('/loq/all_updates', {
+        r = self._request('all_updates', {
             'timestamp': now,
             'username': self.username,
             'height': 1280,
@@ -179,9 +180,6 @@ class Snapchat(object):
         return result
     
     def get_conversations(self):
-        """Returns a list of conversations
-        with other users.
-        """
         offset = None
         updates = self.get_updates()
         try:
@@ -192,7 +190,6 @@ class Snapchat(object):
         offset = last['iter_token']
         
         convos = updates['conversations_response']
-        """
         while len(offset) > 0:
             now = str(timestamp())
             result = self._request('conversations', {
@@ -209,28 +206,23 @@ class Snapchat(object):
             convos += result.json()['conversations_response']
             last = result.json()['conversations_response'][-1]
             offset = last['iter_token'] if 'iter_token' in last else ""
-        """
+
         return convos
 
     def get_snaps(self):
         """Get snaps
-        Returns a list containing metadata for snaps
+        Returns a dict containing metadata for snaps
 
         :param update_timestamp: Optional timestamp (epoch in seconds) to limit
                                  updates
         """
-        snaps = []
-        conversations = self.get_conversations()
-        
-        for conversation in conversations:
-            if len(conversation['pending_received_snaps']) > 0:
-                snap = (_map_keys(conversation['pending_received_snaps'][0]))
-                snaps.append(snap)
+        updates = self.get_updates()
 
+        conversations = self.get_conversations()
         # Filter out snaps containing c_id as these are sent snaps
         #return [_map_keys(snap) for snap in updates['snaps']
                 #if 'c_id' not in snap]
-        return snaps
+        print updates
 
     def get_friend_stories(self, update_timestamp=0):
         """Get stories
@@ -240,6 +232,8 @@ class Snapchat(object):
                                  updates
         """
         result = self.get_updates()
+        if 'auth_token' in result:
+            self.auth_token = result['auth_token']
         stories = []
         story_groups = result['stories_response']['friend_stories']
         for group in story_groups:
@@ -273,15 +267,12 @@ class Snapchat(object):
 
         :param snap_id: Snap id to fetch
         """
-        now = str(timestamp())
-        
-        r = self._request('/bq/blob', {'id': snap_id, 'timestamp':now, 'username': self.username}, 
-                {'now': now, 'gauth': self.gauth}, req_type='get')
-        
-        if is_media(r.content):
-            return r.content
-        
-        return "Can only return images for now"
+        r = self._request('blob', {'username': self.username, 'id': snap_id},
+                          raise_for_status=False)
+        data = decrypt(r.content)
+        if any((is_image(data), is_video(data), is_zip(data))):
+            return data
+        return None
 
     def send_events(self, events, data=None):
         """Send event data
@@ -441,32 +432,25 @@ class Snapchat(object):
             raise ValueError('Could not determine media type for given data')
 
         media_id = make_media_id(self.username)
-        now = str(timestamp())
-        r = self._request('/ph/upload', {
-            'media_id': media_id,
-            'type': media_type,
-            'timestamp': now,
+        r = self._request('upload', {
             'username': self.username,
-            'zipped': '0'
-            }, {'now': now, 'gauth': self.gauth}, files={'data': data})
+            'media_id': media_id,
+            'type': media_type
+            }, files={'data': encrypt(data)})
 
         return media_id if len(r.content) == 0 else None
 
     def send(self, media_id, recipients, time=5):
         """Send a snap. Requires a media_id returned by the upload method
-        Returns true if the snap was sent successfully.
+        Returns true if the snap was sent successfully
         """
-        now = str(timestamp())
-        recipients = '["' + '","'.join(recipients) + '"]'
-        r = self._request('/loq/send', {
-            'media_id': media_id,
-            'zipped': '0',
-            'recipients': recipients,
+        r = self._request('send', {
             'username': self.username,
+            'media_id': media_id,
+            'recipient': recipients,
             'time': time,
-            'timestamp': now,
-            'features_map': '{}'
-            }, {'now': now, 'gauth': self.gauth})
+            'zipped': '0'
+            })
         return len(r.content) == 0
 
     def send_to_story(self, media_id, time=5, media_type=0):
