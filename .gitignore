@@ -3,6 +3,6 @@ test.py
 *.*~
 .vagrant/
 MANIFEST
-pysnap.egg-info
+snapy.egg-info
 build/
 dist/
