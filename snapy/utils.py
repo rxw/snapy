@@ -6,9 +6,9 @@
 """
 
 import json
-from hashlib import sha256, sha1
+from hashlib import sha256, sha1, md5
 from time import time
-from uuid import uuid4
+from uuid import uuid4, uuid1
 from base64 import b64encode, b64decode
 from binascii import unhexlify
 
@@ -165,51 +165,50 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
     headers = {
         'User-Agent': 'Snapchat/9.10.0.0 (HTC One; Android 4.4.2#302626.7#19; gzip)',
         'Accept-Language': 'en',
-        'Accept-Locale': 'en_US'
+        'Accept-Locale': 'en_US',
+        'X-Snapchat-Client-Auth-Token': "Bearer " + gauth
     }
 
-    if endpoint == 'login':
-        URL = 'https://feelinsonice-hrd.appspot.com/loq/'
+    URL = 'https://feelinsonice-hrd.appspot.com'
+    
+    if endpoint == '/loq/login':
         headers.update({
-            'X-Snapchat-Client-Auth-Token': "Bearer " + gauth,
             'Accept-Encoding': 'gzip'
             })
-        print headers
-    elif endpoint == 'device_id' :
-        URL = 'https://feelinsonice-hrd.appspot.com/loq/'
-    else:
-        URL = 'https://feelinsonice-hrd.appspot.com/loq/'
+
+    if endpoint == '/bq/blob':
         headers.update({
-            'X-Snapchat-Client-Auth-Token': "Bearer " + gauth
+            'X-Timestamp': now
             })
 
+    if endpoint == '/loq/login' or endpoint == '/loq/device_id':
+        req_token = make_request_token(STATIC_TOKEN, now)
+    else:
+        req_token = make_request_token(auth_token, now)
+
+    data.update({
+        'timestamp': now,
+        'req_token': req_token
+    })
+
     if req_type == 'post':
-        if endpoint == 'login' or endpoint == 'device_id':
-            req_token = make_request_token(STATIC_TOKEN, now)
-        else:
-            req_token = make_request_token(auth_token, now)
-
-        data.update({
-            'timestamp': now,
-            'req_token': req_token
-        })
-        """ 
-        if endpoint == 'login':
-            datas = "--" + boundary + "\r\n" + 'Content-Disposition: form-data; name="req_token"' + "\r\n\r\n" + req_token + "\r\n"
-            for key, value in data.iteritems():
-                if key == "req_token": continue
-
-                if key is not 'data':
-                    datas += "--" + boundary + "\r\n" + 'Content-Disposition: form-data; name="' + key + '"' + "\r\n\r\n" + str(value) + "\r\n"
-                else:
-                    datas += "--" + boundary + "\r\n" + 'Content-Disposition: form-data; name="data"; filename="data"' + "\r\n" 
-                    + 'Content-Type: application/octet-stream' + "\r\n\r\n" + str(value) + "\r\n"
-            
-            data = datas + "--" + boundary + "--"
-        """
         r = requests.post(URL + endpoint, data=data, files=files,
                           headers=headers)
     else:
+        """
+        boundary = "Boundary+0xAbCdEfGbOuNdArY"
+        datas = "--" + boundary + "\r\n" + 'Content-Disposition: form-data; name="req_token"' + "\r\n\r\n" + req_token + "\r\n"
+        for key, value in data.iteritems():
+            if key == "req_token": continue
+
+            if key is not 'data':
+                datas += "--" + boundary + "\r\n" + 'Content-Disposition: form-data; name="' + key + '"' + "\r\n\r\n" + str(value) + "\r\n"
+            else:
+                datas += "--" + boundary + "\r\n" + 'Content-Disposition: form-data; name="data"; filename="data"' + "\r\n" 
+                + 'Content-Type: application/octet-stream' + "\r\n\r\n" + str(value) + "\r\n"
+        
+        data = "?" + datas + "--" + boundary + "--"
+        """
         r = requests.get(URL + endpoint, params=data, headers=headers)
     if raise_for_status:
         r.raise_for_status()
@@ -218,5 +217,7 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
 
 def make_media_id(username):
     """Create a unique media identifier. Used when uploading media"""
-    return '{username}~{uuid}'.format(username=username.upper(),
-                                      uuid=str(uuid4()))
+    #partial = md5(str(uuid1())).hexdigest()
+    #uuid = "%s-%s-%s-%s-%s" % (partial[:8], partial[8:12], partial[12:16], partial[16:20], partial[20:32])
+    #print uuid
+    return '{username}~{uuid}'.format(username=username.upper(),uuid=str(uuid1()))
