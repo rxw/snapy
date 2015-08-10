@@ -22,7 +22,7 @@ from zipfile import is_zipfile, ZipFile
 
 from docopt import docopt
 
-from pysnap import get_file_extension, Snapchat
+from snapy import get_file_extension, Snapchat
 
 
 def process_snap(s, snap, path, quiet=False):

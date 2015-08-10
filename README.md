@@ -9,7 +9,7 @@ use the new Snapchat API.
 Installation
 ------------
 
-Pysnap is a standard Python package (setuptools) which can be installed by
+Snapy is a standard Python package (setuptools) which can be installed by
 running:
 
     python setup.py install
@@ -23,7 +23,7 @@ Example API usage
 ```python
 
 from pprint import pprint
-from pysnap import Snapchat
+from snapy import Snapchat
 
 s = Snapchat()
 s.login('username', 'password', 'gmail', 'gpasswd')
