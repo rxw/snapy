@@ -6,7 +6,7 @@ import hmac
 from time import time
 from hashlib import sha256, md5
 
-from pysnap.utils import (encrypt, decrypt, decrypt_story,
+from snapy.utils import (encrypt, decrypt, decrypt_story,
                           make_media_id, request, get_auth_token, 
                           make_request_token, get_attestation, 
                           timestamp, STATIC_TOKEN)
@@ -268,7 +268,7 @@ class Snapchat(object):
 
     def get_blob(self, snap_id):
         """Get the image or video of a given snap
-        Returns the decrypted image or a video of the given snap or None if
+        Returns the image or a video of the given snap or None if
         data is invalid.
 
         :param snap_id: Snap id to fetch
@@ -290,13 +290,14 @@ class Snapchat(object):
         :param events: List of events to send
         :param data: Additional data to send
         """
+        now = str(timestamp())
         if data is None:
             data = {}
-        r = self._request('update_snaps', {
-            'username': self.username,
+        r = self._request('/bq/update_snaps', {
             'events': json.dumps(events),
-            'json': json.dumps(data)
-        })
+            'json': json.dumps(data),
+            'username': self.username
+            }, {'now': now,'gauth': self.gauth})
         return len(r.content) == 0
 
     def mark_viewed(self, snap_id, view_duration=1):
@@ -355,7 +356,10 @@ class Snapchat(object):
         """Get friends
         Returns a list of friends.
         """
-        return self.get_updates().get('friends', [])
+        friends = []
+        for friend in self.get_updates().get('friends_response', [])['friends']:
+            friends.append(friend['name'])
+        return friends
 
     def get_best_friends(self):
         """Get best friends
@@ -373,11 +377,14 @@ class Snapchat(object):
 
         :param username: Username to add as a friend
         """
-        r = self._request('friend', {
+        now = str(timestamp())
+        r = self._request('/bq/friend', {
             'action': 'add',
             'friend': username,
-            'username': self.username
-        })
+            'timestamp': now,
+            'username': self.username,
+            'added_by': 'ADDED_BY_USERNAME'
+            }, {'now': now, 'gauth': self.gauth})
         return r.json()
 
     def delete_friend(self, username):

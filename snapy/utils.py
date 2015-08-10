@@ -17,8 +17,6 @@ import requests
 from Crypto.Cipher import AES,PKCS1_OAEP
 from Crypto.PublicKey import RSA
 
-URL = 'https://feelinsonice-hrd.appspot.com/bq/'
-
 boundary = "Boundary+0xAbCdEfGbOuNdArY"
 SECRET = b'iEk21fuwZApXlz93750dmW22pw389dPwOk'
 STATIC_TOKEN = 'm198sOkJEn37DjqZ32lpRu76xmw288xSQ9'
