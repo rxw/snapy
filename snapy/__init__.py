@@ -47,6 +47,8 @@ def get_media_type(data):
         return MEDIA_VIDEO
     if is_image(data):
         return MEDIA_IMAGE
+    if is_zip(data):
+        return MEDIA_VIDEO
     return None
 
 
@@ -278,8 +280,7 @@ class Snapchat(object):
         r = self._request('/bq/blob', {'id': snap_id, 'timestamp':now, 'username': self.username}, 
                 {'now': now, 'gauth': self.gauth}, req_type='get')
         
-        if is_media(r.content):
-            return r.content
+        return r.content
         
         return "Can only return images for now"
 
@@ -476,18 +477,19 @@ class Snapchat(object):
             }, {'now': now, 'gauth': self.gauth})
         return len(r.content) == 0
 
-    def send_to_story(self, media_id, time=5, media_type=0):
+    def send_to_story(self, media_id, time=5, media_type=0, is_zip=0):
         """Send a snap to your story. Requires a media_id returned by the upload method
            Returns true if the snap was sent successfully.
         """
-        r = self._request('post_story', {
+        now = str(timestamp())
+        r = self._request('/bq/post_story', {
             'username': self.username,
             'media_id': media_id,
             'client_id': media_id,
             'time': time,
             'type': media_type,
-            'zipped': '0'
-            })
+            'zipped': is_zip
+            }, {'now': now, 'gauth': self.gauth})
         return r.json()
 
     def clear_feed(self):
