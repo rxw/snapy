@@ -229,9 +229,6 @@ class Snapchat(object):
                 snap = (_map_keys(conversation['pending_received_snaps'][0]))
                 snaps.append(snap)
 
-        # Filter out snaps containing c_id as these are sent snaps
-        #return [_map_keys(snap) for snap in updates['snaps']
-                #if 'c_id' not in snap]
         return snaps
 
     def get_friend_stories(self, update_timestamp=0):
@@ -243,13 +240,14 @@ class Snapchat(object):
         """
         result = self.get_updates()
         stories = []
+        fstories = []
         story_groups = result['stories_response']['friend_stories']
         for group in story_groups:
             sender = group['username']
             for story in group['stories']:
                 obj = story['story']
-                obj['sender'] = sender
-                stories.append(obj)
+                if obj['is_shared'] == False and obj['username'] != 'teamsnapchat':
+                    stories.append(obj)
         return stories
 
     def get_story_blob(self, story_id, story_key, story_iv):
@@ -282,7 +280,6 @@ class Snapchat(object):
         
         return r.content
         
-        return "Can only return images for now"
 
     def send_events(self, events, data=None):
         """Send event data

@@ -17,7 +17,6 @@ import requests
 from Crypto.Cipher import AES,PKCS1_OAEP
 from Crypto.PublicKey import RSA
 
-boundary = "Boundary+0xAbCdEfGbOuNdArY"
 SECRET = b'iEk21fuwZApXlz93750dmW22pw389dPwOk'
 STATIC_TOKEN = 'm198sOkJEn37DjqZ32lpRu76xmw288xSQ9'
 BLOB_ENCRYPTION_KEY = 'M02cnQ51Ji97vwT4'
@@ -193,20 +192,6 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
         r = requests.post(URL + endpoint, data=data, files=files,
                           headers=headers)
     else:
-        """
-        boundary = "Boundary+0xAbCdEfGbOuNdArY"
-        datas = "--" + boundary + "\r\n" + 'Content-Disposition: form-data; name="req_token"' + "\r\n\r\n" + req_token + "\r\n"
-        for key, value in data.iteritems():
-            if key == "req_token": continue
-
-            if key is not 'data':
-                datas += "--" + boundary + "\r\n" + 'Content-Disposition: form-data; name="' + key + '"' + "\r\n\r\n" + str(value) + "\r\n"
-            else:
-                datas += "--" + boundary + "\r\n" + 'Content-Disposition: form-data; name="data"; filename="data"' + "\r\n" 
-                + 'Content-Type: application/octet-stream' + "\r\n\r\n" + str(value) + "\r\n"
-        
-        data = "?" + datas + "--" + boundary + "--"
-        """
         r = requests.get(URL + endpoint, params=data, headers=headers)
     if raise_for_status:
         r.raise_for_status()
