@@ -45,7 +45,9 @@ def decrypt(data):
 
 
 def decrypt_story(data, key, iv):
-    cipher = AES.new(key, AES.MODE_CBC, iv)
+    akey = b64decode(key)
+    aiv = b64decode(iv)
+    cipher = AES.new(akey, AES.MODE_CBC, aiv)
     return cipher.decrypt(pkcs5_pad(data))
 
 def timestamp():
@@ -153,8 +155,11 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
 
         if 'gauth' in params:
             gauth = params['gauth']
+        else:
+            gauth = ""
     else:
         now = str(timestamp())
+        gauth = ""
 
     if data is None:
         data = {}
@@ -183,15 +188,17 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
     else:
         req_token = make_request_token(auth_token, now)
 
-    data.update({
-        'timestamp': now,
-        'req_token': req_token
-    })
+    if endpoint != '/bq/story_blob':
+        data.update({
+            'timestamp': now,
+            'req_token': req_token
+        })
 
     if req_type == 'post':
         r = requests.post(URL + endpoint, data=data, files=files,
                           headers=headers)
     else:
+        if gauth == "": headers = None
         r = requests.get(URL + endpoint, params=data, headers=headers)
     if raise_for_status:
         r.raise_for_status()

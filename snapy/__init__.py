@@ -259,12 +259,11 @@ class Snapchat(object):
         :param story_key: Encryption key of the story
         :param story_iv: Encryption IV of the story
         """
-        r = self._request('story_blob', {'story_id': story_id},
+        now = str(timestamp())
+        r = self._request('/bq/story_blob', {'story_id': story_id},
                           raise_for_status=False, req_type='get')
         data = decrypt_story(r.content, story_key, story_iv)
-        if any((is_image(data), is_video(data), is_zip(data))):
-            return data
-        return None
+        return data
 
     def get_blob(self, snap_id):
         """Get the image or video of a given snap
