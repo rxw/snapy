@@ -3,7 +3,7 @@
 """Basic Snapchat client
 
 Usage:
-  get_snaps.py -u <username> [-p <password> -q] <path>
+  get_snaps.py [-q] -u <username> [-p <password>] --gmail=<gmail> --gpasswd=<gpasswd> <path>
 
 Options:
   -h --help                 Show usage
@@ -59,9 +59,9 @@ def main():
     
     gmail = arguments['--gmail']
     if arguments['--gpasswd'] is None:
-        password = getpass('Gmail password:')
+        gpasswd = getpass('Gmail password:')
     else:
-        password = arguments['--gpasswd']
+        gpasswd = arguments['--gpasswd']
     path = arguments['<path>']
 
     if not os.path.isdir(path):
