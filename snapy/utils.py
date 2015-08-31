@@ -165,7 +165,7 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
         data = {}
     
     headers = {
-        'User-Agent': 'Snapchat/9.10.0.0 (HTC One; Android 4.4.2#302626.7#19; gzip)',
+        'User-Agent': 'Snapchat/9.14.2.0 (HTC One; Android 4.4.2#302626.7#19; gzip)',
         'Accept-Language': 'en',
         'Accept-Locale': 'en_US',
         'X-Snapchat-Client-Auth-Token': "Bearer " + gauth
