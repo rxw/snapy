@@ -9,7 +9,7 @@ from hashlib import sha256, md5
 from snapy.utils import (encrypt, decrypt, decrypt_story,
                           make_media_id, request, get_auth_token, 
                           make_request_token, get_attestation, 
-                          timestamp, STATIC_TOKEN)
+                          timestamp, STATIC_TOKEN, get_client_auth_token)
 
 MEDIA_IMAGE = 0
 MEDIA_VIDEO = 1
@@ -72,9 +72,9 @@ class Snapchat(object):
 
     Usage:
 
-        from pysnap import Snapchat
+        from snapy import Snapchat
         snapchat = Snapchat()
-        snapchat.login('username', 'password')
+        snapchat.login('username', 'password', 'gmail_addr', 'gmail_passwd')
         ...
 
     """
@@ -86,9 +86,9 @@ class Snapchat(object):
         self.gauth = None
 
     def _request(self, endpoint, data=None, params=None, files=None,
-                 raise_for_status=True, req_type='post'):
+                 raise_for_status=True, req_type='post', moreheaders={}):
         return request(endpoint, self.auth_token, data, params, files,
-                       raise_for_status, req_type)
+                       raise_for_status, req_type, moreheaders)
 
     def _get_device_token(self):
         r = self._request('/loq/device_id',params={'gauth': self.gauth})
@@ -105,6 +105,8 @@ class Snapchat(object):
 
         :param username Snapchat username
         :param password Snapchat password
+        :param gmail    Gmail address
+        :param gpasswd  Gmail password
         """
         self.gmail = gmail
         self.gpasswd = gpasswd
@@ -133,7 +135,10 @@ class Snapchat(object):
         }, {
             'now': now, 
             'gauth': self.gauth
-            })
+        }, None, True, 'post', {
+        'X-Snapchat-Client-Auth': get_client_auth_token(username, password, now)['signature']
+        })
+
         result = r.json()
 
         if 'updates_response' in result:
