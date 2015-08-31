@@ -72,9 +72,9 @@ class Snapchat(object):
 
     Usage:
 
-        from pysnap import Snapchat
+        from snapy import Snapchat
         snapchat = Snapchat()
-        snapchat.login('username', 'password')
+        snapchat.login('username', 'password', 'gmail_addr', 'gmail_passwd')
         ...
 
     """
@@ -105,6 +105,8 @@ class Snapchat(object):
 
         :param username Snapchat username
         :param password Snapchat password
+        :param gmail    Gmail address
+        :param gpasswd  Gmail password
         """
         self.gmail = gmail
         self.gpasswd = gpasswd

@@ -1,16 +1,17 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 """Basic Snapchat client
 
 Usage:
-  get_snaps.py -u <username> [-p <password> -q] <path>
+  get_snaps.py [-q] -u <username> [-p <password>] --gmail=<gmail> --gpasswd=<gpasswd> <path>
 
 Options:
   -h --help                 Show usage
   -q --quiet                Suppress output
   -u --username=<username>  Username
   -p --password=<password>  Password (optional, will prompt if omitted)
-
+     --gmail=<gmail>        Gmail address
+     --gpasswd=<gpasswd>    Gmail password
 """
 from __future__ import print_function
 
@@ -21,17 +22,25 @@ import base64
 
 from docopt import docopt
 
-from pysnap import get_file_extension, Snapchat
+from snapy import get_file_extension, Snapchat
 
 
 def main():
     arguments = docopt(__doc__)
     quiet = arguments['--quiet']
+
     username = arguments['--username']
     if arguments['--password'] is None:
         password = getpass('Password:')
     else:
         password = arguments['--password']
+
+    gmail = arguments['--gmail']
+    if arguments['--gpasswd'] is None:
+        gpasswd = getpass('Gmail password:')
+    else:
+        gpasswd = arguments['--gpasswd']
+
     path = arguments['<path>']
 
     if not os.path.isdir(path):
@@ -39,21 +48,24 @@ def main():
         sys.exit(1)
 
     s = Snapchat()
-    if not s.login(username, password)['updates_response'].get('logged'):
+    if not s.login(username, password, gmail, gpasswd)['updates_response'].get('logged'):
         print('Invalid username or password')
         sys.exit(1)
 
     for snap in s.get_friend_stories():
-        filename = '{0}_{1}.{2}'.format(snap['sender'], snap['id'],
+        filename = '{0}.{1}'.format(snap['id'],
                                         get_file_extension(snap['media_type']))
         abspath = os.path.abspath(os.path.join(path, filename))
+
         if os.path.isfile(abspath):
             continue
-        data = s.get_story_blob(snap['media_id'],
-                                base64.b64decode(snap['media_key']),
-                                base64.b64decode(snap['media_iv']))
+
+        data = s.get_story_blob(snap['media_id'], 
+                                snap['media_key'], 
+                                snap['media_iv'])
         if data is None:
             continue
+
         with open(abspath, 'wb') as f:
             f.write(data)
             if not quiet:
