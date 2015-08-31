@@ -78,6 +78,18 @@ def get_attestation(username, password, timestamp):
     result = r.json()
     return result['signedAttestation']
 
+def get_client_auth_token(username, password, timestamp):
+    url = 'http://client-auth.casper.io/'
+    tosend = {
+            'username': username,
+            'password': password,
+            'timestamp': timestamp
+            }
+    r = requests.post(url, data=tosend)
+    result = r.json()
+    return result
+
+
 def encryptPassword(email, password):
     gdpk = "AAAAgMom/1a/v0lblO2Ubrt60J2gcuXSljGFQXgcyZWveWLEwo6prwgi3iJIZdodyhKZQrNWp5nKJ3srRXcUW+F1BD3baEVGcmEgqaLZUNBjm057pKRI16kB0YppeGx5qIQ5QjKzsR8ETQbKLNWgRY0QRNVz34kMJR3P/LgHax/6rmf5AAAAAwEAAQ=="
     binaryKey = b64decode(gdpk).encode('hex')
@@ -138,7 +150,7 @@ def get_auth_token(email, password):
         print "Invalid gmail address"
 
 def request(endpoint, auth_token, data=None, params=None, files=None,
-            raise_for_status=True, req_type='post'):
+            raise_for_status=True, req_type='post', moreheaders={}):
     """Wrapper method for calling Snapchat API which adds the required auth
     token before sending the request.
 
@@ -165,11 +177,13 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
         data = {}
     
     headers = {
-        'User-Agent': 'Snapchat/9.10.0.0 (HTC One; Android 4.4.2#302626.7#19; gzip)',
+        'User-Agent': 'Snapchat/9.14.2.0 (HTC One; Android 4.4.2#302626.7#19; gzip)',
         'Accept-Language': 'en',
         'Accept-Locale': 'en_US',
         'X-Snapchat-Client-Auth-Token': "Bearer " + gauth
     }
+
+    headers.update(moreheaders) 
 
     URL = 'https://feelinsonice-hrd.appspot.com'
     
