@@ -18,11 +18,6 @@ If you prefer not to install it globally, you can install it inside a
 [virtualenv](http://www.virtualenv.org/).
 
 
-Warning
--------
-As of 2015-08-31, your Snapchat credentials are sent to 
-https://api.casper.io as a work around for an API change. 
-
 
 Example API usage
 -----------------
@@ -59,3 +54,9 @@ downloading stories and `get_snaps.py` for downloading snaps.
       -p --password=<password>  Password (optional, will prompt if omitted)
          --gmail=<gmail>        Gmail
          --gpasswd=<gpasswd>    Gmail password
+
+Announcements
+-------------
+
+- As of 2015-08-31, your Snapchat credentials are sent to 
+https://api.casper.io as a work around for an API change. 
