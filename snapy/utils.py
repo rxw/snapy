@@ -6,11 +6,13 @@
 """
 
 import json
+import os
 from hashlib import sha256, sha1, md5
 from time import time
 from uuid import uuid4, uuid1
 from base64 import b64encode, b64decode
 from binascii import unhexlify
+from zipfile import is_zipfile, ZipFile
 
 from urllib import urlencode
 import requests
@@ -225,3 +227,34 @@ def make_media_id(username):
     #uuid = "%s-%s-%s-%s-%s" % (partial[:8], partial[8:12], partial[12:16], partial[16:20], partial[20:32])
     #print uuid
     return '{username}~{uuid}'.format(username=username.upper(),uuid=str(uuid1()))
+
+
+def unzip_snap_mp4(abspath, quiet=False):
+    zipped_snap = ZipFile(abspath)
+
+    # unzip /path/to/zipfile.mp4 to /path/to/zipfile
+    unzip_dir = os.path.splitext(abspath)[0]
+    zipped_snap.extractall(unzip_dir)
+
+    # move /path/to/zipfile.mp4 to /path/to/zipfile.zip
+    os.rename(abspath, unzip_dir + '.zip')
+
+    for f in os.listdir(unzip_dir):
+        # mv /path/to/zipfile/media~* /path/to/zipfile.mp4
+        if f.split('~')[0] == 'media':
+            os.rename(os.path.join(unzip_dir, f), unzip_dir + '.mp4')
+
+        # mv /path/to/zipfile/overlay~* /path/to/zipfile_overlay.png
+        elif f.split('~')[0] == 'overlay':
+            os.rename(os.path.join(unzip_dir, f),
+                      unzip_dir + '_overlay.png')
+
+    try:
+        os.rmdir(unzip_dir)
+    except OSError:
+        print('Something other than a video or overlay was in {0}. \
+               Cannot remove directory, not empty.'
+              .format(unzip_dir + '.zip'))
+
+    if not quiet:
+        print('Unzipped {0}'.format(abspath))

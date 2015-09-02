@@ -3,7 +3,7 @@
 """Basic Snapchat client
 
 Usage:
-  get_snaps.py [-q] -u <username> [-p <password>] --gmail=<gmail> --gpasswd=<gpasswd> <path>
+  get_stories.py [-q -z] -u <username> [-p <password>] --gmail=<gmail> --gpasswd=<gpasswd> <path>
 
 Options:
   -h --help                 Show usage
@@ -12,6 +12,7 @@ Options:
   -p --password=<password>  Password (optional, will prompt if omitted)
      --gmail=<gmail>        Gmail address
      --gpasswd=<gpasswd>    Gmail password
+  -z --unzip                Unzip files
 """
 from __future__ import print_function
 
@@ -23,11 +24,13 @@ import base64
 from docopt import docopt
 
 from snapy import get_file_extension, Snapchat
-
+from snapy.utils import unzip_snap_mp4
+from zipfile import is_zipfile
 
 def main():
     arguments = docopt(__doc__)
     quiet = arguments['--quiet']
+    unzip = arguments['--unzip']
 
     username = arguments['--username']
     if arguments['--password'] is None:
@@ -54,14 +57,14 @@ def main():
 
     for snap in s.get_friend_stories():
         filename = '{0}.{1}'.format(snap['id'],
-                                        get_file_extension(snap['media_type']))
+                                    get_file_extension(snap['media_type']))
         abspath = os.path.abspath(os.path.join(path, filename))
 
         if os.path.isfile(abspath):
             continue
 
-        data = s.get_story_blob(snap['media_id'], 
-                                snap['media_key'], 
+        data = s.get_story_blob(snap['media_id'],
+                                snap['media_key'],
                                 snap['media_iv'])
         if data is None:
             continue
@@ -70,6 +73,9 @@ def main():
             f.write(data)
             if not quiet:
                 print('Saved: {0}'.format(abspath))
+
+        if is_zipfile(abspath) and unzip:
+            unzip_snap_mp4(abspath, quiet)
 
 
 if __name__ == '__main__':
