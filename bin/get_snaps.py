@@ -3,7 +3,7 @@
 """Basic Snapchat client
 
 Usage:
-  get_snaps.py [-q] -u <username> [-p <password>] --gmail=<gmail> --gpasswd=<gpasswd> <path>
+  get_snaps.py [-q -z] -u <username> [-p <password>] --gmail=<gmail> --gpasswd=<gpasswd> <path>
 
 Options:
   -h --help                 Show usage
@@ -12,20 +12,22 @@ Options:
   -p --password=<password>  Password (optional, will prompt if omitted)
      --gmail=<gmail>        Gmail
      --gpasswd=<gpasswd>    Gmail password
+  -z --unzip                Unzip files
 """
 from __future__ import print_function
 
 import os.path
 import sys
 from getpass import getpass
-from zipfile import is_zipfile, ZipFile
+from zipfile import is_zipfile
 
 from docopt import docopt
 
 from snapy import get_file_extension, Snapchat
+from snapy.utils import unzip_snap_mp4
 
 
-def process_snap(s, snap, path, quiet=False):
+def process_snap(s, snap, path, quiet=False, unzip=False):
     filename = '{0}_{1}.{2}'.format(snap['sender'], snap['id'],
                                     get_file_extension(snap['media_type']))
     abspath = os.path.abspath(os.path.join(path, filename))
@@ -39,18 +41,14 @@ def process_snap(s, snap, path, quiet=False):
         if not quiet:
             print('Saved: {0}'.format(abspath))
 
-    if is_zipfile(abspath):
-        zipped_snap = ZipFile(abspath)
-        unzip_dir = os.path.join(path, '{0}_{1}'.format(snap['sender'],
-                                                        snap['id']))
-        zipped_snap.extractall(unzip_dir)
-        if not quiet:
-            print('Unzipped {0} to {1}'.format(filename, unzip_dir))
+    if is_zipfile(abspath) and unzip:
+        unzip_snap_mp4(abspath, quiet)
 
 
 def main():
     arguments = docopt(__doc__)
     quiet = arguments['--quiet']
+    unzip = arguments['--unzip']
     username = arguments['--username']
     if arguments['--password'] is None:
         password = getpass('Password:')
@@ -74,7 +72,7 @@ def main():
         sys.exit(1)
 
     for snap in s.get_snaps():
-        process_snap(s, snap, path, quiet)
+        process_snap(s, snap, path, quiet, unzip)
 
 
 if __name__ == '__main__':
