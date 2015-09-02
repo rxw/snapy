@@ -20,8 +20,8 @@ If you prefer not to install it globally, you can install it inside a
 
 Warning
 -------
-As of 2015-08-31, your Snapchat credentials are sent in the clear to 
-http://client-auth.casper.io as a work around for an API change. 
+As of 2015-08-31, your Snapchat credentials are sent to 
+https://api.casper.io as a work around for an API change. 
 
 
 Example API usage
