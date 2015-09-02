@@ -79,7 +79,7 @@ def get_attestation(username, password, timestamp):
     return result['signedAttestation']
 
 def get_client_auth_token(username, password, timestamp):
-    url = 'http://client-auth.casper.io/'
+    url = 'https://api.casper.io/security/login/signrequest/'
     tosend = {
             'username': username,
             'password': password,
