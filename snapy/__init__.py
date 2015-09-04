@@ -98,6 +98,22 @@ class Snapchat(object):
         self.username = None
         self.auth_token = None
 
+    def restore_token(self, username, auth_token, gmail, gpasswd):
+        """Restore a Snapchat session from an auth_token parameter
+        returned in the response of a login request. Useful for when
+        Snapchat breaks the login API.
+
+        :param username     Snapchat username
+        :param auth_token   Snapchat auth_token
+        :param gmail        Gmail address
+        :param gpasswd      Gmail password
+        """
+        self.username = username
+        self.auth_token = auth_token
+        self.gmail = gmail
+        self.gpasswd = gpasswd
+        self.gauth = get_auth_token(gmail, gpasswd)
+
     def login(self, username, password, gmail, gpasswd):
         """Login to Snapchat account
         Returns a dict containing user information on successful login, the
