@@ -3,16 +3,17 @@
 """Basic Snapchat client
 
 Usage:
-  get_stories.py [-q -z] -u <username> [-p <password>] --gmail=<gmail> --gpasswd=<gpasswd> <path>
+  get_stories.py [-q -z] -u <username> [-p <password> | -a <auth_token>] --gmail=<gmail> --gpasswd=<gpasswd> <path>
 
 Options:
-  -h --help                 Show usage
-  -q --quiet                Suppress output
-  -u --username=<username>  Username
-  -p --password=<password>  Password (optional, will prompt if omitted)
-     --gmail=<gmail>        Gmail address
-     --gpasswd=<gpasswd>    Gmail password
-  -z --unzip                Unzip files
+  -h --help                     Show usage
+  -q --quiet                    Suppress output
+  -u --username=<username>      Username
+  -p --password=<password>      Password (optional, will prompt if omitted)
+     --gmail=<gmail>            Gmail address
+     --gpasswd=<gpasswd>        Gmail password
+  -a --auth-token=<auth_token>  Auth token from Snapchat session
+  -z --unzip                    Unzip files
 """
 from __future__ import print_function
 
@@ -33,10 +34,8 @@ def main():
     unzip = arguments['--unzip']
 
     username = arguments['--username']
-    if arguments['--password'] is None:
-        password = getpass('Password:')
-    else:
-        password = arguments['--password']
+
+    auth_token = arguments['--auth-token']
 
     gmail = arguments['--gmail']
     if arguments['--gpasswd'] is None:
@@ -51,9 +50,19 @@ def main():
         sys.exit(1)
 
     s = Snapchat()
-    if not s.login(username, password, gmail, gpasswd)['updates_response'].get('logged'):
-        print('Invalid username or password')
-        sys.exit(1)
+
+    if auth_token:
+        s.restore_token(username, auth_token, gmail, gpasswd)
+
+    else:
+        if arguments['--password'] is None:
+            password = getpass('Password:')
+        else:
+            password = arguments['--password']
+
+        if not s.login(username, password, gmail, gpasswd)['updates_response'].get('logged'):
+            print('Invalid username or password')
+            sys.exit(1)
 
     for snap in s.get_friend_stories():
         filename = '{0}.{1}'.format(snap['id'],
