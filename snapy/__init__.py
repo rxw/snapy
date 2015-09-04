@@ -209,10 +209,10 @@ class Snapchat(object):
         updates = self.get_updates()
         try:
             last = updates['conversations_response'][-2]
-        except KeyError:
+            offset = last['iter_token']
+        except IndexError:
             print "No conversations except TeamSnapchat"
         
-        offset = last['iter_token']
         
         convos = updates['conversations_response']
         """
