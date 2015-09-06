@@ -9,6 +9,7 @@ import json
 import os
 from hashlib import sha256, sha1, md5
 from time import time
+from datetime import datetime
 from uuid import uuid4, uuid1
 from base64 import b64encode, b64decode
 from binascii import unhexlify
@@ -147,7 +148,9 @@ def get_auth_token(email, password):
     
     if r.status_code == 200:
         splitted = r.text.split('\n')
-        return splitted[0][5:]
+        expiry = datetime.fromtimestamp(int(splitted[2].split('=')[1]))
+        return (splitted[0][5:], expiry)
+
     else:
         print "Invalid gmail address"
 

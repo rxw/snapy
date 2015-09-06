@@ -4,6 +4,7 @@ import json
 import os.path
 import hmac
 from time import time
+from datetime import datetime
 from hashlib import sha256, md5
 
 from snapy.utils import (encrypt, decrypt, decrypt_story,
@@ -84,6 +85,7 @@ class Snapchat(object):
         self.gmail = None
         self.gpasswd = None
         self.gauth = None
+        self.expiry = datetime.fromtimestamp(0)
 
     def _request(self, endpoint, data=None, params=None, files=None,
                  raise_for_status=True, req_type='post', moreheaders={}):
@@ -91,12 +93,24 @@ class Snapchat(object):
                        raise_for_status, req_type, moreheaders)
 
     def _get_device_token(self):
-        r = self._request('/loq/device_id',params={'gauth': self.gauth})
+        r = self._request('/loq/device_id',params={'gauth': self._get_gauth()})
         return r.json()
         
     def _unset_auth(self):
         self.username = None
         self.auth_token = None
+
+    def _get_gauth(self):
+        """This is the proper way to access self.gauth when using it for an
+        API request. This first checks to see if the Bearer token is expired,
+        renewing it if needed.
+        """
+        if datetime.now() >= self.expiry:
+            gauth_token = get_auth_token(self.gmail, self.gpasswd)
+            self.gauth = gauth_token[0]
+            self.expiry = gauth_token[1]
+
+        return self.gauth
 
     def restore_token(self, username, auth_token, gmail, gpasswd):
         """Restore a Snapchat session from an auth_token parameter
@@ -112,7 +126,9 @@ class Snapchat(object):
         self.auth_token = auth_token
         self.gmail = gmail
         self.gpasswd = gpasswd
-        self.gauth = get_auth_token(gmail, gpasswd)
+        gauth_token = get_auth_token(gmail, gpasswd)
+        self.gauth = gauth_token[0]
+        self.expiry = gauth_token[1]
 
     def login(self, username, password, gmail, gpasswd):
         """Login to Snapchat account
@@ -129,7 +145,9 @@ class Snapchat(object):
 
         now = str(timestamp())
         req_token = make_request_token(STATIC_TOKEN, now)
-        self.gauth = get_auth_token(gmail, gpasswd)
+        gauth_token = get_auth_token(gmail, gpasswd)
+        self.gauth = gauth_token[0]
+        self.expiry = gauth_token[1]
         string = username + "|" + password + "|" + now + "|" + req_token
         dtoken = self._get_device_token()
         self._unset_auth()
@@ -150,7 +168,7 @@ class Snapchat(object):
             'req_token': req_token
         }, {
             'now': now, 
-            'gauth': self.gauth
+            'gauth': self._get_gauth()
         }, None, True, 'post', {
         'X-Snapchat-Client-Auth': get_client_auth_token(username, password, now)['signature']
         })
@@ -194,7 +212,7 @@ class Snapchat(object):
             'max_video_width': 480
         }, {
             'now': now,
-            'gauth': self.gauth
+            'gauth': self._get_gauth()
             })
         result = r.json()
         if 'auth_token' in result:
@@ -296,7 +314,7 @@ class Snapchat(object):
         now = str(timestamp())
         
         r = self._request('/bq/blob', {'id': snap_id, 'timestamp':now, 'username': self.username}, 
-                {'now': now, 'gauth': self.gauth}, req_type='get')
+                {'now': now, 'gauth': self._get_gauth()}, req_type='get')
         
         return r.content
         
@@ -315,7 +333,7 @@ class Snapchat(object):
             'events': json.dumps(events),
             'json': json.dumps(data),
             'username': self.username
-            }, {'now': now,'gauth': self.gauth})
+            }, {'now': now,'gauth': self._get_gauth()})
         return len(r.content) == 0
 
     def mark_viewed(self, snap_id, view_duration=1):
@@ -402,7 +420,7 @@ class Snapchat(object):
             'timestamp': now,
             'username': self.username,
             'added_by': 'ADDED_BY_USERNAME'
-            }, {'now': now, 'gauth': self.gauth})
+            }, {'now': now, 'gauth': self._get_gauth()})
         return r.json()
 
     def delete_friend(self, username):
@@ -473,7 +491,7 @@ class Snapchat(object):
             'timestamp': now,
             'username': self.username,
             'zipped': '0'
-            }, {'now': now, 'gauth': self.gauth}, files={'data': data})
+            }, {'now': now, 'gauth': self._get_gauth()}, files={'data': data})
 
         return media_id if len(r.content) == 0 else None
 
@@ -491,7 +509,7 @@ class Snapchat(object):
             'time': time,
             'timestamp': now,
             'features_map': '{}'
-            }, {'now': now, 'gauth': self.gauth})
+            }, {'now': now, 'gauth': self._get_gauth()})
         return len(r.content) == 0
 
     def send_to_story(self, media_id, time=5, media_type=0, is_zip=0):
@@ -506,7 +524,7 @@ class Snapchat(object):
             'time': time,
             'type': media_type,
             'zipped': is_zip
-            }, {'now': now, 'gauth': self.gauth})
+            }, {'now': now, 'gauth': self._get_gauth()})
         return r.json()
 
     def clear_feed(self):
