@@ -142,46 +142,49 @@ class Snapchat(object):
         """
         self.gmail = gmail
         self.gpasswd = gpasswd
+        i = 0
+        logged_in = False
+        while i < 4 and logged_in == False:
+            i += 1
+            now = str(timestamp())
+            req_token = make_request_token(STATIC_TOKEN, now)
+            gauth_token = get_auth_token(gmail, gpasswd)
+            self.gauth = gauth_token[0]
+            self.expiry = gauth_token[1]
+            string = username + "|" + password + "|" + now + "|" + req_token
+            dtoken = self._get_device_token()
+            self._unset_auth()
+            attestation = get_attestation(username, password, now)
+            r = self._request('/loq/login', {
+                'username': username,
+                'password': password,
+                'height': 1280,
+                'width': 720,
+                'max_video_height': 640,
+                'max_video_width': 480,
+                'dsig': hmac.new(str(dtoken['dtoken1v']),string,sha256).hexdigest()[:20],
+                'dtoken1i': dtoken['dtoken1i'],
+                'ptoken': "ie",
+                'attestation': attestation,
+                'sflag': 1,
+                'application_id': 'com.snapchat.android',
+                'req_token': req_token
+            }, {
+                'now': now, 
+                'gauth': self._get_gauth()
+            }, None, True, 'post', {
+            'X-Snapchat-Client-Auth': get_client_auth_token(username, password, now)['signature']
+            })
 
-        now = str(timestamp())
-        req_token = make_request_token(STATIC_TOKEN, now)
-        gauth_token = get_auth_token(gmail, gpasswd)
-        self.gauth = gauth_token[0]
-        self.expiry = gauth_token[1]
-        string = username + "|" + password + "|" + now + "|" + req_token
-        dtoken = self._get_device_token()
-        self._unset_auth()
-        attestation = get_attestation(username, password, now)
-        r = self._request('/loq/login', {
-            'username': username,
-            'password': password,
-            'height': 1280,
-            'width': 720,
-            'max_video_height': 640,
-            'max_video_width': 480,
-            'dsig': hmac.new(str(dtoken['dtoken1v']),string,sha256).hexdigest()[:20],
-            'dtoken1i': dtoken['dtoken1i'],
-            'ptoken': "ie",
-            'attestation': attestation,
-            'sflag': 1,
-            'application_id': 'com.snapchat.android',
-            'req_token': req_token
-        }, {
-            'now': now, 
-            'gauth': self._get_gauth()
-        }, None, True, 'post', {
-        'X-Snapchat-Client-Auth': get_client_auth_token(username, password, now)['signature']
-        })
+            result = r.json()
 
-        result = r.json()
+            if 'updates_response' in result:
+                logged_in = True
+                if 'auth_token' in result['updates_response']:
+                    self.auth_token = result['updates_response']['auth_token']
 
-        if 'updates_response' in result:
-
-            if 'auth_token' in result['updates_response']:
-                self.auth_token = result['updates_response']['auth_token']
-
-            if 'username' in result['updates_response']:
-                self.username = username
+                if 'username' in result['updates_response']:
+                    self.username = username
 
         if self.username is None and self.auth_token is None:
             raise Exception(result.get('message', 'unknown error'))
