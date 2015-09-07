@@ -540,3 +540,27 @@ class Snapchat(object):
         })
 
         return len(r.content) == 0
+
+    def get_snaptag(self):
+        """Get a QR code-like image used to add friends on Snapchat.
+        Returns False if unable to get a QR code.
+        """
+        updates = self.get_updates()
+
+        if not updates:
+            return False
+
+        else:
+            qr_path = updates['updates_response']['qr_path']
+            now = str(timestamp())
+
+            r = self._request('/bq/snaptag_download', {
+                'image': qr_path,
+                'username': self.username,
+                'timestamp': now
+            }, {
+                'now': now,
+                'gauth': self._get_gauth()
+            })
+
+            return r.content
