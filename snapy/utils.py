@@ -81,7 +81,7 @@ def get_attestation(username, password, timestamp):
     tosend = {
         'bytecode_proto': b64encode(androidantiabuse.text.encode('utf8')),
         'nonce': b64encode(sha256(hashString).digest()),
-        'apkDigest': '5O40Rllov9V8PpwD5zPmmp+GQi7UMIWz2A0LWZA7UX0='
+        'apk_digest': '5O40Rllov9V8PpwD5zPmmp+GQi7UMIWz2A0LWZA7UX0='
     }
 
     droidguard = requests.post(url, tosend)
