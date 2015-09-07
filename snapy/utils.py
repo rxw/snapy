@@ -61,25 +61,58 @@ def encrypt(data):
     return cipher.encrypt(pkcs5_pad(data))
 
 def get_attestation(username, password, timestamp):
-    hashString = username + "|" + password + "|" + timestamp + "|/loq/login"
-    nonce = b64encode(sha256(hashString).digest())
-    authentication = "cp4craTcEr82Pdf5j8mwFKyb8FNZbcel"
-    apkDigest      = "JJShKOLH4YYjWZlJQ71A2dPTcmxbaMboyfo0nsKYayE"
-    
-    url = 'http://attest.casper.io/attestation' 
-    tosend = {
-            'nonce': nonce,
-            'authentication': authentication,
-            'apk_digest': apkDigest,
-            'timestamp': timestamp
-            }
-    headers = {
-            'Content-type': 'application/x-www-form-urlencoded'
-            }
-    r = requests.post(url, data=tosend, headers=headers)
+    binary = requests.get('https://api.casper.io/droidguard/create/binary').json()
+    tosend = b64decode(binary['binary'])
 
-    result = r.json()
-    return result['signedAttestation']
+    headers = {
+        'User-Agent': 'DroidGuard/7329000 (A116 _Quad KOT49H); gzip',
+        'Content-type': 'application/x-protobuf'
+    }
+
+    url = 'https://www.googleapis.com/androidantiabuse/v1/x/create?alt=PROTO&key=AIzaSyBofcZsgLSS7BOnBjZPEkk4rYwzOIz-lTI'
+    androidantiabuse = requests.post(url, tosend, headers=headers)
+
+    if androidantiabuse.status_code != 200:
+        print('Attestation androidantiabuse HTTP status code != 200')
+        return
+
+    hashString = username + "|" + password + "|" + timestamp + "|/loq/login"
+    url = 'https://api.casper.io/droidguard/attest/binary'
+    tosend = {
+        'bytecode_proto': b64encode(androidantiabuse.text.encode('utf8')),
+        'nonce': b64encode(sha256(hashString).digest()),
+        'apkDigest': '5O40Rllov9V8PpwD5zPmmp+GQi7UMIWz2A0LWZA7UX0='
+    }
+
+    droidguard = requests.post(url, tosend)
+
+    if droidguard.status_code != 200:
+        print('Attestation droidguard HTTP status code != 200')
+        return
+
+    if 'binary' not in droidguard.json():
+        print('Attestation error: Invalid droidguard JSON / no signedAttestation')
+        return
+
+    url = 'https://www.googleapis.com/androidcheck/v1/attestations/attest?alt=JSON&key=AIzaSyDqVnJBjE5ymo--oBJt3On7HQx9xNm1RHA'
+    tosend = b64decode(droidguard.json()['binary'])
+
+    headers = {
+        'User-Agent': 'SafetyNet/7899000 (WIKO JZO54K); gzip',
+        'Content-Type': 'application/x-protobuf'
+    }
+
+    androidcheck = requests.post(url, tosend, headers=headers)
+
+    if androidcheck.status_code != 200:
+        print('Attestation androidcheck HTTP status code != 200')
+        return
+
+    if 'signedAttestation' not in androidcheck.json():
+        print('Attestation error: Invalid androidcheck JSON / no signedAttestation')
+        return
+
+    return androidcheck.json()['signedAttestation']
 
 def get_client_auth_token(username, password, timestamp):
     url = 'https://api.casper.io/security/login/signrequest/'
