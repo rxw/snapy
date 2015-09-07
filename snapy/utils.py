@@ -61,25 +61,21 @@ def encrypt(data):
     return cipher.encrypt(pkcs5_pad(data))
 
 def get_attestation(username, password, timestamp):
-    hashString = username + "|" + password + "|" + timestamp + "|/loq/login"
-    nonce = b64encode(sha256(hashString).digest())
-    authentication = "cp4craTcEr82Pdf5j8mwFKyb8FNZbcel"
-    apkDigest      = "JJShKOLH4YYjWZlJQ71A2dPTcmxbaMboyfo0nsKYayE"
-    
-    url = 'http://attest.casper.io/attestation' 
-    tosend = {
-            'nonce': nonce,
-            'authentication': authentication,
-            'apk_digest': apkDigest,
-            'timestamp': timestamp
+    binaryJSON = requests.get("https://api.casper.io/droidguard/create/binary").json()['binary']
+    url = 'https://www.googleapis.com/androidantiabuse/v1/x/create'
+    parameters = {
+            'alt': 'PROTO',
+            'key': 'AIzaSyBofcZsgLSS7BOnBjZPEkk4rYwzOIz-lTI'
             }
+    tosend = binaryJSON
     headers = {
-            'Content-type': 'application/x-www-form-urlencoded'
+            'User-Agent': 'DroidGuard/7329000 (A116 _Quad KOT49H); gzip',
+            'Accept-Encoding': 'gzip',
+            'Content-type': 'application/x-protobuf'
             }
-    r = requests.post(url, data=tosend, headers=headers)
-
-    result = r.json()
-    return result['signedAttestation']
+    r = requests.post(url, data=tosend, params=parameters, headers=headers)
+    result = r.content
+    return result
 
 def get_client_auth_token(username, password, timestamp):
     url = 'https://api.casper.io/security/login/signrequest/'
