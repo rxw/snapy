@@ -79,7 +79,7 @@ def get_attestation(username, password, timestamp):
     hashString = username + "|" + password + "|" + timestamp + "|/loq/login"
     url = 'https://api.casper.io/droidguard/attest/binary'
     tosend = {
-        'bytecode_proto': b64encode(androidantiabuse.text.encode('utf8')),
+        'bytecode_proto': b64encode(androidantiabuse.content),
         'nonce': b64encode(sha256(hashString).digest()),
         'apk_digest': '5O40Rllov9V8PpwD5zPmmp+GQi7UMIWz2A0LWZA7UX0='
     }
