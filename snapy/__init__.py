@@ -471,6 +471,15 @@ class Snapchat(object):
         """
         return [f for f in self.get_friends() if f['type'] == FRIEND_BLOCKED]
 
+    def get_requested(self):
+        """Find friend requests
+        Returns a list of users requests a friendship.
+        """
+        requests = []
+        for request in self.get_updates().get('friends_response', [])['added_friends']:
+            requests.append(request)
+        return requests
+
     def upload(self, path):
         """Upload media
         Returns the media ID on success. The media ID is used when sending
