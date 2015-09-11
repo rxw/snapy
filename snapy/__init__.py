@@ -268,7 +268,7 @@ class Snapchat(object):
         
         for conversation in conversations:
             num_pending = len(conversation['pending_received_snaps'])
-            for i in range(0,num_pending):
+            for i in range(0, num_pending):
                 snap = (_map_keys(conversation['pending_received_snaps'][i]))
                 snaps.append(snap)
 
