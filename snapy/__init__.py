@@ -4,6 +4,7 @@ import json
 import os.path
 import hmac
 from time import time
+from uuid import uuid1
 from datetime import datetime
 from hashlib import sha256, md5
 
@@ -111,6 +112,18 @@ class Snapchat(object):
             self.expiry = gauth_token[1]
 
         return self.gauth
+
+    def _get_conversation_auth(self, to):
+        """Gets conversation auth for a certain user.
+           Only takes in one user, returns a dict.
+        """
+        now = str(timestamp())
+        r = self._request('/loq/conversation_auth_token',{
+            'username': self.username,
+            'timestamp': now,
+            'conversation_id': self.username + "~" + to
+            }, {'now': now, 'gauth': self._get_gauth()})
+        return r.json()
 
     def restore_token(self, username, auth_token, gmail, gpasswd):
         """Restore a Snapchat session from an auth_token parameter
@@ -539,6 +552,44 @@ class Snapchat(object):
             'zipped': is_zip
             }, {'now': now, 'gauth': self._get_gauth()})
         return r.json()
+
+    def get_conversation_info(self, tos):
+        messages = {}
+        if not isinstance(tos, list):
+            tos = [tos]
+        
+        for to in tos:
+            auth_info = self._get_conversation_auth(to)
+            if 'messaging_auth' in auth_info:
+                payload = auth_info['messaging_auth']['payload']
+                mac = auth_info['messaging_auth']['mac']
+                conv_id = str(uuid1())
+                messages = {
+                        'presences': {self.username: True, to: False},
+                        'receiving_video': False,
+                        'supports_here': True,
+                        'header': {
+                                'auth': {
+                                        'mac': mac,
+                                        'payload': payload
+                                },
+                                'to': [to],
+                                'conv_id': self.username + "~" + to,
+                                'from': self.username,
+                                'conn_sequence_number': 0
+                        },
+                        'retried': False,
+                        'id': conv_id,
+                        'type': 'presence'
+                        }
+            now = str(timestamp())
+            r = self._request('/loq/conversation_post_messages',{
+                'auth_token': self._get_gauth(),
+                'messages': messages,
+                'timestamp': now,
+                'username': self.username
+                },{'now': now, 'gauth': self._get_gauth()})
+            return r.json()
 
     def clear_feed(self):
         """Clear the user's feed
