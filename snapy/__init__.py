@@ -459,11 +459,14 @@ class Snapchat(object):
 
         :param username: Username to block
         """
-        r = self._request('friend', {
+        now = (str(timestamp()))
+        r = self._request('/bq/friend', {
             'action': 'block',
             'friend': username,
-            'username': self.username
-        })
+            'username': self.username,
+            'features_map': '{}',
+            'timestamp': now
+            }, {'gauth': self._get_gauth()})
         return r.json().get('message') == '{0} was blocked'.format(username)
 
     def unblock(self, username):
