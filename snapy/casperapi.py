@@ -60,7 +60,7 @@ class CasperAPI(object):
         return self._request(endpoint, headers, data, True)
 
     def _generate_snapchat_nonce(self, username, password, timestamp, endpoint = "/loq/login"):
-        nonce = b64encode(sha256(username+"|"+password+"|"+timestamp+"|"+endpoint).digest())
+        return b64encode(sha256(username+"|"+password+"|"+timestamp+"|"+endpoint).digest())
 
 
     def get_snapchat_client_auth(self, username, password, timestamp):

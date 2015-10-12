@@ -192,7 +192,7 @@ class Snapchat(object):
                 'now': now, 
                 'gauth': self._get_gauth()
             }, None, True, 'post', {
-            'X-Snapchat-Client-Auth': casper.get_client_auth_token(username, password, now)['signature']
+            'X-Snapchat-Client-Auth': casper.get_snapchat_client_auth(username, password, now)['signature']
             })
 
             result = r.json()
