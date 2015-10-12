@@ -24,11 +24,8 @@ class CasperAPI(object):
         string = ''
         for key, value in sorted(params.items()):
             string += key+value
-        print "string is \"" + string + "\""
         hexdigest = hmac.new(secret, string, sha256).hexdigest()
-        print "hextdigest = " + hexdigest
         signature = "v1:" + hexdigest
-        print "signature " + signature
         return signature
 
     def _request(self, endpoint, moreheaders = [], data = [], post = False):
@@ -42,7 +39,6 @@ class CasperAPI(object):
         if moreheaders is not None:
             headers.update(moreheaders)
 
-        print "past more headers"
         if post:
             r = requests.post(self.URL + endpoint, headers=headers, data=data)
         else:
