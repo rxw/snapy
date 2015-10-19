@@ -13,6 +13,8 @@ from snapy.utils import (encrypt, decrypt, decrypt_story,
                           make_request_token, get_attestation, 
                           timestamp, STATIC_TOKEN, get_client_auth_token)
 
+from snapy.API import CasperAPI
+
 MEDIA_IMAGE = 0
 MEDIA_VIDEO = 1
 MEDIA_VIDEO_NOAUDIO = 2
@@ -143,7 +145,7 @@ class Snapchat(object):
         self.gauth = gauth_token[0]
         self.expiry = gauth_token[1]
 
-    def login(self, username, password, gmail, gpasswd):
+    def login(self, username, password, gmail, gpasswd, ckey, csecret):
         """Login to Snapchat account
         Returns a dict containing user information on successful login, the
         data returned is similar to get_updates.
@@ -155,6 +157,8 @@ class Snapchat(object):
         """
         self.gmail = gmail
         self.gpasswd = gpasswd
+
+        casper = CasperAPI(ckey, csecret)
         i = 0
         logged_in = False
         while i < 4 and logged_in == False:
@@ -167,7 +171,8 @@ class Snapchat(object):
             string = username + "|" + password + "|" + now + "|" + req_token
             dtoken = self._get_device_token()
             self._unset_auth()
-            attestation = get_attestation(username, password, now)
+            nonce = casper.generateSnapchatNonce(username, password, now)
+            attestation = casper.getSnapchatAttestation(nonce)
             r = self._request('/loq/login', {
                 'username': username,
                 'password': password,
@@ -186,7 +191,7 @@ class Snapchat(object):
                 'now': now, 
                 'gauth': self._get_gauth()
             }, None, True, 'post', {
-            'X-Snapchat-Client-Auth': get_client_auth_token(username, password, now)['signature']
+            'X-Snapchat-Client-Auth': casper.getSnapchatClientAuth(username, password, now)
             })
 
             result = r.json()
@@ -459,11 +464,14 @@ class Snapchat(object):
 
         :param username: Username to block
         """
-        r = self._request('friend', {
+        now = (str(timestamp()))
+        r = self._request('/bq/friend', {
             'action': 'block',
             'friend': username,
-            'username': self.username
-        })
+            'username': self.username,
+            'features_map': '{}',
+            'timestamp': now
+            }, {'gauth': self._get_gauth()})
         return r.json().get('message') == '{0} was blocked'.format(username)
 
     def unblock(self, username):

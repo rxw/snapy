@@ -215,7 +215,7 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
         data = {}
     
     headers = {
-        'User-Agent': 'Snapchat/9.14.2.0 (HTC One; Android 4.4.2#302626.7#19; gzip)',
+        'User-Agent': 'Snapchat/9.16.2.0 (HTC One; Android 5.0.2#482424.2#21; gzip)',
         'Accept-Language': 'en',
         'Accept-Locale': 'en_US',
         'X-Snapchat-Client-Auth-Token': "Bearer " + gauth
@@ -248,10 +248,10 @@ def request(endpoint, auth_token, data=None, params=None, files=None,
 
     if req_type == 'post':
         r = requests.post(URL + endpoint, data=data, files=files,
-                          headers=headers)
+                          headers=headers, verify=False)
     else:
         if gauth == "": headers = None
-        r = requests.get(URL + endpoint, params=data, headers=headers)
+        r = requests.get(URL + endpoint, params=data, headers=headers, verify=False)
     if raise_for_status:
         r.raise_for_status()
     return r
