@@ -1,0 +1,2 @@
+class CasperException(Exception):
+	pass
