@@ -589,7 +589,7 @@ class Snapchat(object):
                 'timestamp': now,
                 'username': self.username
                 },{'now': now, 'gauth': self._get_gauth()})
-            return r.json()
+            return r
 
     def clear_feed(self):
         """Clear the user's feed
