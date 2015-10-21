@@ -451,12 +451,14 @@ class Snapchat(object):
 
         :param username: Username to remove from friends
         """
-        r = self._request('friend', {
+        now = str(timestamp())
+        r = self._request('/bq/friend', {
             'action': 'delete',
             'friend': username,
+            'timestamp': now,
             'username': self.username
-        })
-        return r.json()['updates_response'].get('logged')
+            }, {'now': now, 'gauth': self._get_gauth()})
+        return r.json()
 
     def block(self, username):
         """Block a user
