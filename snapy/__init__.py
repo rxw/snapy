@@ -635,3 +635,18 @@ class Snapchat(object):
             })
 
             return r.content
+
+    def get_my_story(self):
+        now = str(timestamp())
+        r = self._request('/bq/stories', {
+                'timestamp': now,
+                'screen_height_in': 4.527565,
+                'screen_height_px': 1920,
+                'screen_width_in': 2.5590599,
+                'screen_width_px': 1080,
+                'username': self.username,
+                'features_map': {}
+            })
+        
+        result = r.json()['my_stories']
+        return result
