@@ -1,7 +1,7 @@
 Snapy
 ===============
 
-[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/sindresorhus/awesome)
+[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/sindresorhus/awesome) ![CasperStatus](https://www.mgp25.com/cstatus/status.svg)
 
 A fork of pysnap by [martinp](https://github.com/martinp/pysnap) updated to
 use the new Snapchat API. 
